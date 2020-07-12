@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Chat, Channel, ChannelHeader, Thread, Window } from 'stream-chat-react';
-import { MessageList, MessageInput } from 'stream-chat-react';
+import { Channel, ChannelHeader, Chat, MessageInput, MessageList, Thread, Window } from 'stream-chat-react';
 import { StreamChat } from 'stream-chat';
 import './App.css';
 import 'stream-chat-react/dist/css/index.css';
@@ -12,40 +11,35 @@ function App() {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
 
-    function register() {
-        fetch("http://localhost:8080/registrations", {
+    async function register() {
+        const response = await fetch("http://localhost:8080/registrations", {
             method: "POST",
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
-              },
+            },
             body: JSON.stringify({
                 firstName,
                 lastName,
                 email
             })
         })
-            .then((res) => {
-                // console.log("res", res.json())
-                return res.json()
-            })
-            .then(({ userId, token, channelId }) => {
-                const chatClient = new StreamChat('gx5a64bj4ptz');
-
-                chatClient.setUser(
-                    {
-                        id: userId,
-                        name: email,
-                        image: 'https://getstream.io/random_svg/?id=bitter-unit-5&name=Bitter+unit'
-                    },
-                    token,
-                );
+        const { userId, token, channelId, apiKey } = await response.json();
+        console.log('userid: ', userId, "token", token, 'channelid', channelId, 'apiKey', apiKey)
+        const chatClient = new StreamChat(apiKey);
+        await chatClient.setUser(
+            {
+                id: userId,
+                name: email,
+                image: `https://getstream.io/random_svg/?id=${userId}`
+            },
+            token,
+        );
 
 
-                const channel = chatClient.channel('messaging', channelId);
-                setChatClient(chatClient);
-                setChannel(channel)
-            })
+        const channel = chatClient.channel('messaging', channelId);
+        setChatClient(chatClient);
+        setChannel(channel)
     }
 
     if (chatClient && channel) {
@@ -65,22 +59,28 @@ function App() {
         )
     } else {
         return (
-            <div className="App">
-                <label for="firstName">First Name</label>
-                <input type="text" name="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                />
-                <label for="lastName">Last Name</label>
-                <input type="text" name="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                />
-                <label for="email">Enter Email address</label>
-                <input type="text" name="email"
-                       value={email}
-                       onChange={(e) => setEmail(e.target.value)}
-                />
+            <div className="app">
+                <div className="app-input">
+                    <label htmlFor="firstName">First Name</label>
+                    <input type="text" name="firstName"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                    />
+                </div>
+                <div className="app-input">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input type="text" name="lastName"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                    />
+                </div>
+                <div className="app-input">
+                    <label htmlFor="email">Email</label>
+                    <input type="text" name="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
                 <button onClick={() => register()}>Start chat</button>
             </div>
         );
